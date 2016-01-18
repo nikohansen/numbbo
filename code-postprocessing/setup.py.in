@@ -8,7 +8,7 @@ import sys
 import setuptools
 from distutils.core import setup
 
-_name = 'bbob_pproc'  # package name, should change to cocopp
+_name = 'cocopp'  # package name, should change to cocopp
 setup(
     name = _name,
     version = "$COCO_VERSION",
@@ -19,7 +19,7 @@ setup(
                           'best*algentries*.pickle.gz',
                           'pprldistr2009*.pickle.gz',
                           'js/*', 'tth/*']},
-    url = 'https://github.com/numbbo/numbbo/',
+    url = 'https://github.com/numbbo/coco',
     license = 'BSD',
     maintainer = 'Dejan Tusar',
     maintainer_email = 'dejan.tusar@inria.fr',
