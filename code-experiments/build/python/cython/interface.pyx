@@ -180,6 +180,8 @@ cdef class Suite:
         cdef np.npy_intp shape[1]  # probably completely useless
         cdef coco_suite_t* suite
         cdef coco_problem_t* p
+        cdef bytes old_level
+
         if self.initialized:
             self.reset()
         self._ids = []
@@ -207,7 +209,9 @@ also report back a missing name to https://github.com/numbbo/coco/issues
         if suite == NULL:
             raise NoSuchSuiteException("No suite with name '%s' found" % self._name)
         while True:
+            # old_level = coco_set_log_level('warnings')
             p = coco_suite_get_next_problem(suite, NULL)
+            # coco_set_log_level(old_level)
             if not p:
                 break
             self._indices.append(coco_problem_get_suite_dep_index(p))

@@ -24,7 +24,7 @@ import numpy as np  # "pip install numpy" installs numpy
 import cocoex
 from cocoex import Suite, Observer, set_log_level
 set_log_level('warning')
-verbose = 1  # 
+verbose = 1  #
 
 try: import cma  # cma.fmin is a solver option, "pip install cma" installs cma
 except: pass
