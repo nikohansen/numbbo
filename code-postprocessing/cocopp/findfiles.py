@@ -170,26 +170,26 @@ class COCODataArchive(list):
     Method `index` is inherited from `list` and finds the index of the
     respective name entry in the archive (exact match only):
 
-    >>> from cocopp import data_archive as cda
-    >>> len(cda) > 100
+    >>> from cocopp import bbob
+    >>> len(bbob) > 150
     True
 
     Get a `list` of already downloaded data full pathnames:
 
-    >>> cda.get('', remote=False)  # doctest:+ELLIPSIS
+    >>> bbob.get('', remote=False)  # doctest:+ELLIPSIS
     [...
 
     Find something more specific:
 
-    >>> cda.find('auger')[0]
-    'bbob/2009/CMA-ESPLUSSEL_auger_noiseless.tgz'
-    >>> cda.index('bbob/2009/CMA-ESPLUSSEL_auger_noiseless.tgz')
+    >>> bbob.find('auger')[0]
+    '2009/CMA-ESPLUSSEL_auger_noiseless.tgz'
+    >>> bbob.index('2009/CMA-ESPLUSSEL_auger_noiseless.tgz')
     6
 
-    >>> data_paths = (cda.get(['auger', '2013'], remote=False)  # understood as AND search
-    ...               + cda.get(['hansen', '2010'], remote=False))
+    >>> data_paths = (bbob.get(['auger', '2013'], remote=False)  # understood as AND search
+    ...               + bbob.get(['hansen', '2010'], remote=False))
     >>> assert len(data_paths) >= 0  # could be any number, because remote was False and archive could be growing
-    >>> data_path = cda.get_one(['au', '2009'], remote=False)
+    >>> data_path = bbob.get_one(['au', '2009'], remote=False)
     >>> assert data_path is None or str(data_path) == data_path
 
     where `data_paths` could be empty. Now we can call
@@ -442,7 +442,11 @@ class COCODataArchive(list):
         hosted at ``'~/.cocopp/data-archive'``.
         """
         # extract names (first column) from _all
-        list.__init__(self, (entry[0] for entry in COCODataArchive._all))
+        try:
+            list.__init__(self, (entry[0] for entry in self._all))
+        except AttributeError:
+            list.__init__(self, (entry[0] for entry in COCOBBOBDataArchive._all))
+
         self.local_data_path = os.path.expanduser(os.path.join(*local_path.split('/')))
         self.remote_data_path = url
         self._names_found = []  # names recently found
@@ -481,7 +485,7 @@ class COCODataArchive(list):
         Example::
 
             >>> import cocopp
-            >>> cocopp.data_archive.find('Auger', '2013')[1]
+            >>> cocopp._data_archive.find('Auger', '2013')[1]
             'bbob/2013/lmm-CMA-ES_auger_noiseless.tgz'
 
         Details: The list of matching names is stored in `current_names`.
@@ -564,7 +568,8 @@ class COCODataArchive(list):
         for name in self.names_found:
             full_name = self.full_path(name)
             if os.path.exists(full_name):
-                self.check_hash(name)
+                if len(self.names_found) < 20:  # takes about 0.03s per entry
+                    self.check_hash(name)
                 full_names.append(full_name)
                 continue
             if not remote:
@@ -676,3 +681,76 @@ class COCODataArchive(list):
                         self._hash(path),
                          os.path.getsize(path) // 1000))  # or os.stat(path).st_size
 
+class COCOBBOBDataArchive(COCODataArchive):
+    """This class "contains" archived data for the 'bbob' suite.
+
+    >>> import cocopp
+    >>> cocopp.bbob  # doctest:+ELLIPSIS
+    ['2009/ALPS_hornby_noiseless.tgz',...
+    >>> isinstance(cocopp.bbob, cocopp.findfiles.COCOBBOBDataArchive)
+    True
+
+    While the data are specific to `COCOBBOBDataArchive`, all the
+    functionality is inherited from the parent `class` `COCODataArchive`:
+    """
+    __doc__ += COCODataArchive.__doc__
+    def __init__(self,
+                 local_path='~/.cocopp/data-archive/bbob',
+                 url='http://coco.gforge.inria.fr/data-archive/bbob'):
+        """Arguments are a full local path and an URL.
+
+        ``~`` refers to the user home folder.
+        """
+        self._all = [[line[0][5:]] + list(line[1:]) for line in COCODataArchive._all
+                     if line[0].startswith('bbob/')]
+        COCODataArchive.__init__(self, local_path, url)
+
+class COCOBBOBNoisyDataArchive(COCODataArchive):
+    """This class "contains" archived data for the 'bbob-noisy' suite.
+
+    >>> import cocopp
+    >>> cocopp.bbob_noisy  # doctest:+ELLIPSIS
+    ['2009/ALPS_hornby_noisy.tgz',...
+    >>> isinstance(cocopp.bbob_noisy, cocopp.findfiles.COCOBBOBNoisyDataArchive)
+    True
+
+    While the data are specific to `COCOBBOBNoisyDataArchive`, all the
+    functionality is inherited from the parent `class` `COCODataArchive`:
+    """
+    __doc__ += COCODataArchive.__doc__
+    def __init__(self,
+                 local_path='~/.cocopp/data-archive/bbob-noisy',
+                 url='http://coco.gforge.inria.fr/data-archive/bbob-noisy'):
+        """Arguments are a full local path and an URL.
+
+        ``~`` refers to the user home folder. By default the archive is
+        hosted at ``'~/.cocopp/data-archive/bbob'``.
+        """
+        self._all = [[line[0][11:]] + list(line[1:]) for line in COCODataArchive._all
+                     if line[0].startswith('bbob-noisy/')]
+        COCODataArchive.__init__(self, local_path, url)
+
+class COCOBBOBBiobjDataArchive(COCODataArchive):
+    """This class "contains" archived data for the 'bbob-biobj' suite.
+
+    >>> import cocopp
+    >>> cocopp.bbob_biobj  # doctest:+ELLIPSIS
+    ['2016/DEMO.tgz', '2016/GA-MULTIOBJ-NSGA-II.tgz',...
+    >>> isinstance(cocopp.bbob_biobj, cocopp.findfiles.COCOBBOBBiobjDataArchive)
+    True
+
+    While the data are specific to `COCOBBOBBiobjDataArchive`, all the
+    functionality is inherited from the parent `class` `COCODataArchive`:
+    """
+    __doc__ += COCODataArchive.__doc__
+    def __init__(self,
+                 local_path='~/.cocopp/data-archive/bbob-biobj',
+                 url='http://coco.gforge.inria.fr/data-archive/bbob-biobj'):
+        """Arguments are a full local path and an URL.
+
+        ``~`` refers to the user home folder. By default the archive is
+        hosted at ``'~/.cocopp/data-archive/bbob-biobj'``.
+        """
+        self._all = [[line[0][11:]] + list(line[1:]) for line in COCODataArchive._all
+                     if line[0].startswith('bbob-biobj/')]
+        COCODataArchive.__init__(self, local_path, url)
