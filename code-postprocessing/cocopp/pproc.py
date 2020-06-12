@@ -1122,13 +1122,15 @@ class DataSet(object):
 
     def evals_with_simulated_restarts(self,
             targets,
-            samplesize=genericsettings.simulated_runlength_bootstrap_sample_size,
+            samplesize=None,
             randintfirst=toolsstats.randint_derandomized,
             randintrest=toolsstats.randint_derandomized,
             bootstrap=False):
         """Return a len(targets) list of ``samplesize`` "simulated" run
-        lengths (#evaluations, sorted).
+        lengths (#evaluations, sorted) with a similar interface as `detEvals`.
 
+        `samplesize` is by default one or twice `nbRuns`.
+    
         ``np.sort(np.concatenate(return_value))`` provides the combined
         sorted ECDF data over all targets which may be plotted with
         `pyplot.step` (missing the last step).
@@ -1143,6 +1145,8 @@ class DataSet(object):
         TODO: change this: To get a bootstrap sample for estimating dispersion use
         ``min_samplesize=0, randint=np.random.randint``.
 
+        TODO: how is the sample size propagated to the bootstrapping?
+
         Details:
 
         - For targets where all runs were successful, samplesize=nbRuns()
@@ -1154,13 +1158,11 @@ class DataSet(object):
 
         TODO: if `samplesize` >> `nbRuns` and nsuccesses is large,
         the data representation becomes somewhat inefficient.
-
-        TODO: it may be useful to make the samplesize dependent on the
-        number of successes and supply the multipliers
-        max(samplesizes) / samplesizes.
-        """
+    """
         try: targets = targets([self.funcId, self.dim])
         except TypeError: pass
+        if samplesize is None:  # default sampling is derandomized, hence no need for a huge number
+            samplesize = 2 * self.nbRuns() if self.nbRuns() < 15 else self.nbRuns()
         res = []  # res[i] is a list of samplesize evals
         for evals in self.detEvals(targets, bootstrap=bootstrap):
             # prepare evals array
